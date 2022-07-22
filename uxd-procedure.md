@@ -48,21 +48,21 @@ seid query wasm list-code --chain-id sei-chain
 Upload to the chain
 
 ```sh
-seid tx wasm store artifacts/uxd_cw20_token.wasm --from $ACCOUNT_NAME  --chain-id sei-chain --gas=4000000 --fees=1000000usei -y --broadcast-mode block --output json >> artifacts/store.json
+seid tx wasm store artifacts/uxd_cw20_token.wasm --from $ACCOUNT_NAME  --chain-id sei-chain --gas=4000000 --fees=1000000usei -y --broadcast-mode block --output json > artifacts/store.json
 
-CODE_ID=$(jq -r '.logs[0].events[-1].attributes[0].value' < artifacts/store.json)
-echo $CODE_ID
+CW20_CODE_ID=$(jq -r '.logs[0].events[-1].attributes[0].value' < artifacts/store.json)
+echo $CW20_CODE_ID
 ```
 
 Check that version of contract is not instantiated yet
 
 ```sh
-seid query wasm list-contract-by-code $CODE_ID --chain-id sei-chain  --output json
+seid query wasm list-contract-by-code $CW20_CODE_ID --chain-id sei-chain  --output json
 ```
 
 ```sh
 # Download the wasm binary from the chain and compare it to the original one
-seid query wasm code $CODE_ID --chain-id sei-chain artifacts/download.wasm
+seid query wasm code $CW20_CODE_ID --chain-id sei-chain artifacts/download.wasm
 # The two binaries should be identical
 diff artifacts/uxd_cw20_token.wasm artifacts/download.wasm
 # diff should be null
@@ -77,11 +77,11 @@ INIT_MINTABLE='{"name":"UXD","symbol":"UXD","decimals":6,"initial_balances":[],"
 echo $INIT_MINTABLE
 
 # Instantiate the contract
-seid tx wasm instantiate $CODE_ID "$INIT_MINTABLE"  --chain-id sei-chain --from $ACCOUNT_NAME --label "uxd-mintable" --gas=4000000 --fees=1000000usei -y --no-admin --broadcast-mode=block --output json >> artifacts/mintable.json
+seid tx wasm instantiate $CW20_CODE_ID "$INIT_MINTABLE"  --chain-id sei-chain --from $ACCOUNT_NAME --label "uxd-mintable" --gas=5000000 --fees=1000000usei -y --no-admin --broadcast-mode=block --output json > artifacts/mintable.json
 
 # Check the contract details and account balance
-seid query wasm list-contract-by-code $CODE_ID  --chain-id sei-chain --output json
-CONTRACT=$(seid query wasm list-contract-by-code $CODE_ID --output json | jq -r '.contracts[-1]')
+seid query wasm list-contract-by-code $CW20_CODE_ID  --chain-id sei-chain --output json
+CONTRACT=$(seid query wasm list-contract-by-code $CW20_CODE_ID --output json | jq -r '.contracts[-1]')
 echo $CONTRACT
 
 # See the contract details
@@ -102,7 +102,7 @@ seid query wasm contract-state smart $CONTRACT "$ALL_ACC_QUERY" --chain-id sei-c
 seid query wasm contract-state smart $CONTRACT "$BALANCE_QUERY" --chain-id sei-chain --output json
 
 # Execute a mint to an address
-EXEC_MINT='{"mint": {"recipient":"'$ACCOUNT_ADDRESS'","amount":"10000"}}'
+EXEC_MINT='{"mint": {"recipient":"'$ACCOUNT_ADDRESS'","amount":"100000"}}'
 
 seid tx wasm execute $CONTRACT "$EXEC_MINT" --from $ACCOUNT_NAME --gas=4000000 --fees=1000000usei -y --broadcast-mode=block  --chain-id sei-chain --output json >> artifacts/exec_mint.json
 
